@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Ten un gran inicio de mes</title>
+<link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@600&family=Quicksand:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--glow:#e6ff8a;--soft:#b9d97a;color-scheme:dark}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;overflow:hidden;background:#050a1a;touch-action:none;-webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+body{background:radial-gradient(120% 90% at 50% 0%,#0f2a4a 0%,#0a1a2f 45%,#04100f 100%);font-family:'Quicksand',system-ui,sans-serif;color:var(--soft)}
+.hills{position:fixed;left:0;right:0;bottom:0;height:26%;pointer-events:none;
+background:
+radial-gradient(60% 100% at 20% 100%,#03100b 60%,transparent 61%),
+radial-gradient(70% 120% at 80% 100%,#020b08 60%,transparent 61%),
+radial-gradient(90% 70% at 50% 100%,#04140d 60%,transparent 61%)}
+canvas{position:fixed;inset:0;width:100%;height:100%;touch-action:none}
+.top{position:fixed;top:calc(7% + env(safe-area-inset-top,0px));left:0;right:0;text-align:center;font-size:clamp(12px,3.2vw,16px);letter-spacing:.4em;text-transform:uppercase;opacity:0;animation:in 2s ease forwards .6s;z-index:2;pointer-events:none}
+.hint{position:fixed;bottom:calc(16px + env(safe-area-inset-bottom,0px));left:0;right:0;text-align:center;font-size:13px;opacity:0;animation:in 1.5s ease forwards 8s;z-index:2;pointer-events:none}
+@keyframes in{to{opacity:.8}}
+</style>
+</head>
+<body>
+<div class="top">Hoy empieza algo nuevo</div>
+<canvas id="c"></canvas>
+<div class="hills"></div>
+<p class="hint">toca o desliza para asustar a las luciérnagas</p>
+<script>
+(function(){
+var cv=document.getElementById('c'),x=cv.getContext('2d');
+var W,H,D=Math.min(window.devicePixelRatio||1,2);
+var spr=document.createElement('canvas');spr.width=spr.height=64;
+(function(){var s=spr.getContext('2d'),g=s.createRadialGradient(32,32,0,32,32,32);
+g.addColorStop(0,'rgba(255,255,230,1)');g.addColorStop(.18,'rgba(230,255,140,.85)');
+g.addColorStop(.5,'rgba(170,230,90,.22)');g.addColorStop(1,'rgba(120,200,60,0)');
+s.fillStyle=g;s.fillRect(0,0,64,64)})();
+
+var P=[],F=[],stars=[],lines=[],fs=60,ptr={x:-999,y:-999,on:false};
+var t0=performance.now();
+
+function setLines(){
+  lines=W<640?['Ten un gran','inicio de mes','que sea tan bonito','como tú ✨'.replace(' ✨','')]
+             :['Ten un gran inicio de mes','que sea tan bonito como tú'];
+}
+function fontStr(s){return '600 '+s+'px "Dancing Script", "Brush Script MT", cursive'}
+
+function build(){
+  W=innerWidth;H=innerHeight;
+  cv.width=W*D;cv.height=H*D;x.setTransform(D,0,0,D,0,0);
+  setLines();
+  var off=document.createElement('canvas');off.width=W;off.height=H;
+  var o=off.getContext('2d');
+  fs=96;
+  do{fs-=2;o.font=fontStr(fs);var m=0;lines.forEach(function(l){m=Math.max(m,o.measureText(l).width)})}
+  while(m>W*.86&&fs>16);
+  var lh=fs*1.3,y0=H*.5-(lines.length-1)*lh/2+fs*.15;
+  o.fillStyle='#fff';o.textAlign='center';o.textBaseline='middle';o.font=fontStr(fs);
+  lines.forEach(function(l,i){o.fillText(l,W/2,y0+i*lh)});
+  var step=Math.max(3,Math.round(fs/15)),d=o.getImageData(0,0,W,H).data,T=[];
+  for(var yy=0;yy<H;yy+=step)for(var xx=0;xx<W;xx+=step){
+    if(d[((yy|0)*W+(xx|0))*4+3]>140)T.push([xx,yy]);
+  }
+  for(var i=T.length-1;i>0;i--){var j=(Math.random()*(i+1))|0,tmp=T[i];T[i]=T[j];T[j]=tmp}
+  while(P.length>T.length)P.pop();
+  while(P.length<T.length)P.push({x:Math.random()*W,y:Math.random()*H*.9,vx:0,vy:0,
+    dl:2.2+Math.random()*2.2,ph:Math.random()*6,tw:.8+Math.random()*2,sz:0});
+  P.forEach(function(p,i){p.tx=T[i][0];p.ty=T[i][1];p.sz=Math.max(3.2,step*1.5)});
+  stars=[];for(i=0;i<60;i++)stars.push({x:Math.random()*W,y:Math.random()*H*.6,r:Math.random()*1.1+.2,t:Math.random()*6});
+  if(!F.length)for(i=0;i<46;i++)F.push({x:Math.random()*W,y:Math.random()*H,a:Math.random()*6,
+    sp:.2+Math.random()*.5,ph:Math.random()*6,pl:.5+Math.random()*1.2,r:10+Math.random()*16});
+}
+
+function frame(now){
+  var t=(now-t0)/1000;
+  x.clearRect(0,0,W,H);
+  x.globalCompositeOperation='source-over';
+  stars.forEach(function(s){x.globalAlpha=.15+.5*Math.abs(Math.sin(t*.6+s.t));x.fillStyle='#cfe3ff';x.beginPath();x.arc(s.x,s.y,s.r,0,7);x.fill()});
+  x.globalCompositeOperation='lighter';
+
+  // luciérnagas libres
+  F.forEach(function(f){
+    f.a+=Math.sin(t*.4+f.ph)*.02+(Math.random()-.5)*.08;
+    f.x+=Math.cos(f.a)*f.sp;f.y+=Math.sin(f.a)*f.sp*.7-.05;
+    if(f.x<-30)f.x=W+30;if(f.x>W+30)f.x=-30;if(f.y<-30)f.y=H*.95;if(f.y>H+30)f.y=-20;
+    if(ptr.on){var dx=f.x-ptr.x,dy=f.y-ptr.y,q=dx*dx+dy*dy;if(q<24000){var k=1-q/24000;f.x+=dx*.06*k;f.y+=dy*.06*k}}
+    var a=.25+.75*Math.pow(.5+.5*Math.sin(t*f.pl+f.ph),2),r=f.r*(.8+.4*a);
+    x.globalAlpha=a;x.drawImage(spr,f.x-r,f.y-r,r*2,r*2);
+  });
+
+  // luciérnagas que escriben el mensaje
+  var formed=0;
+  P.forEach(function(p){
+    if(t<p.dl){ // vagan antes de reunirse
+      p.vx+=(Math.random()-.5)*.25;p.vy+=(Math.random()-.5)*.25;
+      p.vx*=.96;p.vy*=.96;
+    }else{
+      var tx=p.tx+Math.sin(t*p.tw+p.ph)*1.2,ty=p.ty+Math.cos(t*p.tw+p.ph)*1.2;
+      p.vx+=(tx-p.x)*.018;p.vy+=(ty-p.y)*.018;
+      p.vx*=.86;p.vy*=.86;
+      if(Math.abs(p.tx-p.x)+Math.abs(p.ty-p.y)<6)formed++;
+    }
+    if(ptr.on){var dx=p.x-ptr.x,dy=p.y-ptr.y,q=dx*dx+dy*dy;
+      if(q<16000){var k=(1-q/16000)*7,l=Math.sqrt(q)||1;p.vx+=dx/l*k;p.vy+=dy/l*k}}
+    p.x+=p.vx;p.y+=p.vy;
+    var a=.55+.45*Math.sin(t*p.tw*1.7+p.ph),r=p.sz*(.9+.25*a);
+    x.globalAlpha=.35+.65*a;x.drawImage(spr,p.x-r,p.y-r,r*2,r*2);
+  });
+
+  // resplandor suave del texto una vez formado
+  var k=Math.min(1,formed/Math.max(1,P.length)*1.4);
+  if(k>.2){
+    x.globalCompositeOperation='lighter';x.globalAlpha=(k-.2)*.22;
+    x.font=fontStr(fs);x.textAlign='center';x.textBaseline='middle';x.fillStyle='#f3ffb0';
+    x.shadowColor='#c8ff5a';x.shadowBlur=24;
+    var lh=fs*1.3,y0=H*.5-(lines.length-1)*lh/2+fs*.15;
+    lines.forEach(function(l,i){x.fillText(l,W/2,y0+i*lh)});
+    x.shadowBlur=0;
+  }
+  requestAnimationFrame(frame);
+}
+
+var offT;
+function move(e){ptr.x=e.clientX;ptr.y=e.clientY;ptr.on=true;clearTimeout(offT)}
+function release(){clearTimeout(offT);offT=setTimeout(function(){ptr.on=false},350)}
+addEventListener('pointerdown',move);
+addEventListener('pointermove',function(e){if(e.pointerType==='mouse'||e.pressure>0||e.buttons)move(e)});
+addEventListener('pointerup',release);addEventListener('pointercancel',release);
+addEventListener('touchstart',function(e){var t=e.touches[0];if(t)move(t)},{passive:false});
+addEventListener('touchmove',function(e){e.preventDefault();var t=e.touches[0];if(t)move(t)},{passive:false});
+addEventListener('touchend',release);
+addEventListener('resize',build);
+
+var go=function(){build();requestAnimationFrame(frame)};
+if(document.fonts&&document.fonts.load){
+  Promise.race([document.fonts.load(fontStr(60),'Ten un gran inicio'),new Promise(function(r){setTimeout(r,2500)})]).then(go,go);
+}else go();
+})();
+</script>
+</body>
+</html>
